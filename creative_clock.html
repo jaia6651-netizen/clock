@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Creative Clock — Analog + Digital</title>
+  <style>
+    :root{
+      --bg:#0f1724;
+      --glass: rgba(255,255,255,0.06);
+      --accent1: #7c3aed; /* purple */
+      --accent2: #06b6d4; /* teal */
+      --accent3: #f97316; /* orange */
+      --text: #e6eef8;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial}
+    body{
+      display:grid;place-items:center;min-height:100%;background: radial-gradient(1200px 600px at 10% 20%, rgba(124,58,237,0.08), transparent), radial-gradient(1000px 500px at 90% 80%, rgba(6,182,212,0.05), transparent), var(--bg);
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+      padding:32px;
+    }
+
+    .card{
+      width:min(920px,95vw);
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:18px;padding:28px;display:grid;grid-template-columns:420px 1fr;gap:22px;align-items:center;backdrop-filter: blur(8px);
+      box-shadow: 0 10px 30px rgba(2,6,23,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
+    }
+
+    /* CLOCK */
+    .clock-wrap{display:flex;flex-direction:column;gap:18px;align-items:center}
+    .clock{
+      width:360px;height:360px;border-radius:50%;position:relative;display:grid;place-items:center;
+      background: conic-gradient(from 180deg at 50% 50%, rgba(124,58,237,0.14), rgba(6,182,212,0.08), rgba(249,115,22,0.06), rgba(124,58,237,0.14));
+      box-shadow: 0 12px 30px rgba(2,6,23,0.6), 0 6px 18px rgba(6,182,212,0.02) inset;
+      border: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .dial{
+      width:86%;height:86%;border-radius:50%;background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.06));display:grid;place-items:center;position:relative;
+      box-shadow: 0 6px 18px rgba(2,6,23,0.5) inset;
+    }
+
+    .ticks{position:absolute;inset:0;border-radius:50%}
+    .tick{position:absolute;left:50%;top:6%;width:2px;height:12%;background:linear-gradient(180deg,rgba(255,255,255,0.9),rgba(255,255,255,0.1));transform-origin:50% 100%;border-radius:2px}
+    .tick.small{height:8%;opacity:0.6;background:rgba(255,255,255,0.06)}
+
+    .center-dot{width:14px;height:14px;background:linear-gradient(180deg,var(--accent1),var(--accent2));border-radius:50%;position:absolute;z-index:6;box-shadow:0 4px 12px rgba(0,0,0,0.6)}
+
+    .hand{position:absolute;left:50%;top:50%;transform-origin:50% 100%;transition: transform 0.08s linear}
+    .hand.hour{width:6px;height:27%;background:linear-gradient(180deg,var(--accent1),rgba(0,0,0,0.2));border-radius:6px;z-index:4}
+    .hand.min{width:4px;height:36%;background:linear-gradient(180deg,var(--accent2),rgba(0,0,0,0.2));border-radius:4px;z-index:3}
+    .hand.sec{width:2px;height:46%;background:linear-gradient(180deg,var(--accent3),rgba(0,0,0,0.2));border-radius:2px;z-index:2}
+
+    .digital{
+      padding:12px 20px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.06));backdrop-filter: blur(6px);display:flex;flex-direction:column;align-items:center;gap:6px;
+      box-shadow:0 6px 18px rgba(2,6,23,0.4);
+    }
+    .time-large{font-weight:700;font-size:28px;letter-spacing:1px}
+    .date-small{font-size:13px;color:rgba(230,238,248,0.7)}
+
+    /* Right panel */
+    .controls{padding:16px;border-radius:12px;background:var(--glass);display:flex;flex-direction:column;gap:12px}
+    .title{font-size:20px;font-weight:700}
+    .desc{font-size:13px;color:rgba(230,238,248,0.75)}
+
+    .switch-row{display:flex;gap:10px;align-items:center}
+    .btn{padding:10px 14px;border-radius:10px;background:transparent;border:1px solid rgba(255,255,255,0.06);cursor:pointer}
+    .btn.primary{background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#031025;border:none}
+
+    .theme-samples{display:flex;gap:8px}
+    .sample{width:42px;height:42px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;font-size:12px}
+
+    .footer{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-top:10px}
+
+    /* small screens */
+    @media (max-width:860px){
+      .card{grid-template-columns:1fr;}
+      .clock{width:300px;height:300px}
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="clock-wrap">
+      <div class="clock" id="analog">
+        <div class="dial" id="dial">
+          <div class="ticks" id="ticks"></div>
+          <div class="hand hour" id="hour-hand"></div>
+          <div class="hand min" id="min-hand"></div>
+          <div class="hand sec" id="sec-hand"></div>
+          <div class="center-dot"></div>
+        </div>
+      </div>
+
+      <div class="digital" id="digital">
+        <div class="time-large" id="time-text">00:00:00</div>
+        <div class="date-small" id="date-text">Loading date...</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div>
+        <div class="title">Creative Clock</div>
+        <div class="desc">An animated analog + digital clock with smooth motion, theme presets and a playful radial background. Click "Theme" presets or toggle the second hand smoothness.</div>
+      </div>
+
+      <div class="switch-row">
+        <button class="btn" id="toggle-smooth">Toggle Smooth Seconds</button>
+        <button class="btn" id="toggle-24">Toggle 12/24h</button>
+        <button class="btn primary" id="randomize">Randomize Colors</button>
+      </div>
+
+      <div>
+        <div style="font-weight:600;margin-bottom:6px">Themes</div>
+        <div class="theme-samples">
+          <div class="sample" data-theme="purple" title="Purple">💜</div>
+          <div class="sample" data-theme="teal" title="Teal">💠</div>
+          <div class="sample" data-theme="sun" title="Sunset">🌅</div>
+          <div class="sample" data-theme="mono" title="Monochrome">⚪</div>
+        </div>
+      </div>
+
+      <div style="margin-top:6px">
+        <div style="font-weight:600;margin-bottom:6px">Extras</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" id="show-utc">Show UTC</button>
+          <button class="btn" id="copy-time">Copy Time</button>
+          <button class="btn" id="glow">Toggle Glow</button>
+        </div>
+      </div>
+
+      <div class="footer">
+        <div style="font-size:13px;color:rgba(230,238,248,0.7)">Made with ✨</div>
+        <div style="font-size:12px;color:rgba(230,238,248,0.6)">Drag the page to reposition</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Create tick marks dynamically
+    const ticks = document.getElementById('ticks');
+    for(let i=0;i<60;i++){
+      const el = document.createElement('div');
+      el.className = 'tick';
+      if(i%5!==0) el.classList.add('small');
+      const rot = i*6;
+      el.style.transform = `translateX(-50%) rotate(${rot}deg)`;
+      ticks.appendChild(el);
+    }
+
+    const hourHand = document.getElementById('hour-hand');
+    const minHand = document.getElementById('min-hand');
+    const secHand = document.getElementById('sec-hand');
+    const timeText = document.getElementById('time-text');
+    const dateText = document.getElementById('date-text');
+
+    // Smooth second hand toggle
+    let smooth = false;
+    document.getElementById('toggle-smooth').addEventListener('click',()=>{
+      smooth = !smooth;
+      secHand.style.transition = smooth ? 'transform 0.35s cubic-bezier(.4,.2,.2,1)' : 'transform 0.08s linear';
+    });
+
+    // 12/24 toggle
+    let use24 = false;
+    document.getElementById('toggle-24').addEventListener('click',()=>{use24=!use24});
+
+    // Show UTC
+    let showUTC = false;
+    document.getElementById('show-utc').addEventListener('click',()=>{showUTC=!showUTC;document.getElementById('show-utc').innerText = showUTC? 'Showing UTC' : 'Show UTC'});
+
+    // Copy time
+    document.getElementById('copy-time').addEventListener('click',()=>{
+      navigator.clipboard?.writeText(timeText.innerText+ ' ' + dateText.innerText).then(()=>{
+        alert('Time copied to clipboard!')
+      }).catch(()=>alert('Unable to copy'))
+    });
+
+    // Glow toggle
+    let glow=false;
+    document.getElementById('glow').addEventListener('click',()=>{
+      glow=!glow; document.getElementById('analog').style.boxShadow = glow? '0 12px 40px rgba(124,58,237,0.18), 0 6px 18px rgba(6,182,212,0.06) inset' : '';
+    });
+
+    // Theme samples
+    const themes = {
+      purple: ['#7c3aed','#06b6d4','#f97316'],
+      teal: ['#06b6d4','#7c3aed','#06b6d4'],
+      sun: ['#ff6b6b','#ffb86b','#ffd36b'],
+      mono: ['#9ca3af','#6b7280','#374151']
+    }
+    document.querySelectorAll('.sample').forEach(s=>{
+      s.addEventListener('click',()=>{
+        const t = s.dataset.theme;
+        const c = themes[t];
+        document.documentElement.style.setProperty('--accent1', c[0]);
+        document.documentElement.style.setProperty('--accent2', c[1]);
+        document.documentElement.style.setProperty('--accent3', c[2]);
+      })
+    })
+
+    // Randomize colors
+    document.getElementById('randomize').addEventListener('click', ()=>{
+      function randColor(){return '#'+Math.floor(Math.random()*0xFFFFFF).toString(16).padStart(6,'0')}
+      document.documentElement.style.setProperty('--accent1', randColor());
+      document.documentElement.style.setProperty('--accent2', randColor());
+      document.documentElement.style.setProperty('--accent3', randColor());
+    })
+
+    // Update clock
+    function updateClock(){
+      const now = showUTC ? new Date(new Date().toISOString()) : new Date();
+      const ms = now.getMilliseconds();
+      const s = now.getSeconds() + ms/1000;
+      const m = now.getMinutes() + s/60;
+      const h = now.getHours() % 12 + m/60;
+
+      const hourDeg = h * 30; // 360/12
+      const minDeg = m * 6; // 360/60
+      const secDeg = s * 6;
+
+      hourHand.style.transform = `translateX(-50%) rotate(${hourDeg}deg)`;
+      minHand.style.transform = `translateX(-50%) rotate(${minDeg}deg)`;
+      secHand.style.transform = `translateX(-50%) rotate(${secDeg}deg)`;
+
+      // Digital
+      let hours = now.getHours();
+      let displayHour = use24 ? hours : (hours % 12) || 12;
+      let hh = String(displayHour).padStart(2,'0');
+      let mm = String(now.getMinutes()).padStart(2,'0');
+      let ss = String(now.getSeconds()).padStart(2,'0');
+      const ampm = hours>=12 ? 'PM' : 'AM';
+      timeText.innerText = use24 ? `${hh}:${mm}:${ss}` : `${hh}:${mm}:${ss} ${ampm}`;
+
+      const day = now.toLocaleString(undefined,{weekday:'long'});
+      const date = now.toLocaleString(undefined,{day:'numeric',month:'short',year:'numeric'});
+      dateText.innerText = `${day}, ${date}` + (showUTC ? ' (UTC)' : '');
+    }
+
+    // Start with smooth seconds off
+    secHand.style.transition = 'transform 0.08s linear';
+
+    // Use requestAnimationFrame for smoothness
+    function tick(){ updateClock(); requestAnimationFrame(tick); }
+    requestAnimationFrame(tick);
+
+    // Fun: allow dragging of the whole card on desktop
+    (function makeDraggable(){
+      const card = document.querySelector('.card');
+      let isDown=false, startX, startY, origLeft, origTop;
+      card.style.position='relative';
+      card.addEventListener('pointerdown',(e)=>{
+        isDown=true; startX=e.clientX; startY=e.clientY; origLeft=card.offsetLeft; origTop=card.offsetTop; card.setPointerCapture(e.pointerId);
+      })
+      window.addEventListener('pointermove',(e)=>{
+        if(!isDown) return; const dx = e.clientX - startX; const dy = e.clientY - startY; card.style.left = (origLeft + dx) + 'px'; card.style.top = (origTop + dy) + 'px';
+      })
+      window.addEventListener('pointerup',(e)=>{ isDown=false; try{ e.target.releasePointerCapture && e.target.releasePointerCapture(e.pointerId);}catch(e){} })
+    })();
+
+    // Small accessibility: keyboard shortcuts
+    window.addEventListener('keydown',(e)=>{
+      if(e.key === 'g') document.getElementById('glow').click();
+      if(e.key === 's') document.getElementById('toggle-smooth').click();
+      if(e.key === 'r') document.getElementById('randomize').click();
+    });
+
+    // Nice initial animation
+    window.addEventListener('load',()=>{
+      document.querySelectorAll('.hand').forEach(h=>{ h.style.transform += ' scaleY(0.98)'; });
+      setTimeout(()=>document.querySelectorAll('.hand').forEach(h=>h.style.transform = h.style.transform.replace(' scaleY(0.98)','')),600);
+    })
+  </script>
+</body>
+</html>
